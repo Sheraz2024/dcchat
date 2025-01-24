@@ -1,2 +1,6 @@
 streamlit
-openai
+python-dotenv
+pyzabbix
+langchain
+langgraph
+langchain-openai

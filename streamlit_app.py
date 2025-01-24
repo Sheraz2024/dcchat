@@ -1,56 +1,56 @@
+# main.py
+
 import streamlit as st
-from openai import OpenAI
+from modules.zabbix_assistant import ZabbixAssistant
+from sidebar.sidebar import render_sidebar, load_model_parameters
+from modules.chat_handler import initialize_session_state, render_chat_history, handle_chat_input
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
-)
+def main():
+    st.markdown("""
+    <style>
+        /* Set global text alignment to left */
+        .css-1n76uvr, .css-2trqyj, .stButton button, .stMarkdown {
+            text-align: left;
+        }
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+        /* Style buttons for left alignment and flex layout */
+        .stButton button {
+            padding: 0;
+            border: none;
+            background-color: transparent;
+            display: contents;
+            align-items: center;
+            text-align: left;
+            font-size: 12px;
+        }
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+        /* Ensure chat titles and icons do not wrap and align left */
+        .stButton button .content {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+        /* Adjust styling for chat bubbles */
+        .chat-message-bubble {
+            border: none;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+            text-align: left;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    st.title("💬 Zabbix AI Assistant")
+    st.caption("🚀 Intelligent Monitoring Companion")
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
+    initialize_session_state()
 
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    assistant = ZabbixAssistant()
+    load_model_parameters(assistant)
+    render_sidebar(assistant)
+    handle_chat_input(assistant)
 
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+if __name__ == "__main__":
+    main()
